@@ -30,10 +30,10 @@ class PubHugo extends Basic
             exit("\n");
         }
 
-        $this->hugoRootPath = rtrim($config['hugo_root_path'], '/');
+        $this->hugoRootPath = rtrim(trim($config['hugo_root_path']), '/');
         $this->contentDir   = $this->hugoRootPath . '/content/post'; // 有些主题是post，有些是posts
         if (!empty($config['post_path'])) {
-            $this->contentDir = $this->hugoRootPath . rtrim($config['post_path']);
+            $this->contentDir = $this->hugoRootPath . '/content/' . trim(trim($config['post_path']), '/');
         }
         if (!is_dir($this->contentDir)) {
             mkdir($this->contentDir, 0777, true);
@@ -43,7 +43,9 @@ class PubHugo extends Basic
     public function start()
     {
         $this->router->add('<doc_id:uint>', function (array $args) {
-            $docId   = $args['doc_id'];
+            $docId = $args['doc_id'];
+            $this->climate->white()->inline('正在发布: ')->green()->inline($docId)->br();
+
             $article = $this->db->get('article', '*', [
                 'uuid' => $docId,
             ]);
@@ -53,7 +55,6 @@ class PubHugo extends Basic
             }
 
             $docFilePath = $this->MWebPath . '/docs/' . $docId . '.md';
-
             if (!file_exists($docFilePath)) {
                 $this->climate->red("文档文件: $docFilePath 不存在");
                 exit("\n");
@@ -62,6 +63,7 @@ class PubHugo extends Basic
             $header            = [];
             $existHugoFilePath = $this->findHugoPostPath($docId);
             if ($existHugoFilePath) {
+                $this->climate->white()->inline('已发布路径: ')->green()->inline(dirname($existHugoFilePath))->br();
                 try {
                     $header = Yaml::parse($this->parseYamlContent($existHugoFilePath));
                 } catch (Exception $e) {
@@ -75,8 +77,6 @@ class PubHugo extends Basic
             if (empty($header['title'])) {
                 $header['title'] = $this->parseTitle($docId);
             }
-            $this->climate->inline('正在发布: ')->green()->bold()->inline($header['title']);
-            $this->climate->br();
             $title = $this->inputTitle($header['title']);
             if ($title) {
                 $header['title'] = $title;
