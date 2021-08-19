@@ -41,7 +41,8 @@ class Generate extends Basic
 
             if (!empty($catRef[$row['uuid']])) {
                 foreach ($catRef[$row['uuid']] as $aid => $info) {
-                    $content[] = "- [{$info['name']}](docs/$aid.md)" . ' `(' . date('Y-m-d', $info['dateModif']) . ')`';
+                    $date      = date('Y-m-d', $info['dateModif']);
+                    $content[] = "- `[$date]` [{$info['name']}](docs/$aid.md)";
                 }
             }
 
@@ -49,7 +50,7 @@ class Generate extends Basic
         }
 
         // 写入README
-        file_put_contents(dirname(__DIR__) . '/README.md', implode("\n", $content));
+        file_put_contents($this->MWebPath . '/README.md', implode("\n", $content));
     }
 
 
@@ -70,7 +71,7 @@ class Generate extends Basic
 
     public function getDocumentSize()
     {
-        $docDir = dirname(__DIR__) . '/docs';
+        $docDir = $this->MWebPath . '/docs';
 
         if (function_exists('popen') && !strstr(PHP_OS, 'WIN')) {
             $handle = popen('du -sh ' . $docDir . ' 2>&1', 'r');
