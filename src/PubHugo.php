@@ -143,7 +143,7 @@ class PubHugo extends Basic
             // 组装内容
             ksort($header);
             $headerYaml = Yaml::dump($header);
-            $content    = $this->modifyContent($docFilePath, $header['tag_more_line']);
+            $content    = $this->modifyContent($docFilePath, $header);
             $doc        = "---\n# 博文配置信息\n\n" . $headerYaml . "---\n\n\n" . $content;
 
             // 先删除原Hugo文章目录
@@ -259,7 +259,7 @@ class PubHugo extends Basic
     }
 
     // 获得去掉标题后的内容
-    public function modifyContent($filePath, $moreLineNum = 0)
+    public function modifyContent($filePath, $header = 0)
     {
         $handle = fopen($filePath, "r");
         if (!$handle) {
@@ -290,7 +290,7 @@ class PubHugo extends Basic
             $content .= $line;
 
             // 添加<!--more-->标签
-            if ($num == $moreLineNum) {
+            if ($num == $header['tag_more_line']) {
                 $content .= PHP_EOL . "<!--more-->" . PHP_EOL . PHP_EOL;
             }
         }
@@ -299,17 +299,44 @@ class PubHugo extends Basic
 
         $content = ltrim($content);
 
-        return $this->replaceMediaPath($content);
+        // 替换附件路径
+        $content = $this->replaceMediaPath($content);
+        // 替换关联文档路径
+        return $this->replaceMWebLink($content, $header);
     }
 
     // 替换附件路径
-    public function replaceMediaPath($content)
+    public function replaceMediaPath($doc)
     {
         // ](media/xx/yy.zz)   =>  ](media/yy.zz)
         // ](/media/xx/yy.zz)  =>  ](media/yy.zz)
         return preg_replace_callback('#(]\()/?(media/)(\d+)/(.*\))#', function ($matches) {
             return urldecode($matches[1] . $matches[2] . $matches[4]);
-        }, $content);
+        }, $doc);
+    }
+
+    // 替换mweblib相关文档链接
+    public function replaceMWebLink($doc, $header)
+    {
+        // [XXX](mweblib://12345678)  => ../blog-slug/
+        return preg_replace_callback('#mweblib://(\d+)#', function ($matches) use ($header) {
+            $docId = $matches[1];
+            // 引用了自己...
+            if ($docId == $header['doc_id']) {
+                return '../' . $header['slug'];
+            }
+
+            // 查询是否已发布
+            $existPath = $this->findHugoPostPath($docId);
+            if (!$existPath) {
+                $this->climate->red('笔记中引用的文档尚未发布成博客: ' . $matches[0]);
+                $this->climate->green('请先发布引用的文档');
+                exit;
+            }
+
+            // 替换成相对路径的链接
+            return '../' . basename(dirname($existPath));
+        }, $doc);
     }
 
 }

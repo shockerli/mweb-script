@@ -14,32 +14,6 @@ trait Input
         // return trim($input);
     }
 
-    public function inputSlug($curr)
-    {
-        $this->climate->br()->inline('[')
-            ->green()->inline('slug')
-            ->inline(']:            # 可选/建议，博文自定义URL，支持字母、数字、下划线、中划线, 至少6位');
-
-        if ($curr) {
-            $this->climate->br()->inline('当前: ')->green()->inline($curr);
-        }
-
-        READ_SLUG:
-        echo "\n";
-        $slug = $this->read();
-        $slug = trim($slug);
-        if (mb_strlen($slug) > 0 && !preg_match('/^[a-zA-Z0-9\-_]{6,}$/i', $slug)) {
-            $this->climate->red('[slug]格式不正确, 请重新输入:');
-            goto READ_SLUG;
-        }
-        if (empty($slug) && empty($curr)) {
-            $this->climate->red('[slug]必填!!!');
-            goto READ_SLUG;
-        }
-
-        return $slug ?: $curr;
-    }
-
     public function inputDescription($curr)
     {
         $this->climate->br()->inline('[')
@@ -116,6 +90,32 @@ trait Input
         return $date;
     }
 
+    public function inputSlug($curr)
+    {
+        $this->climate->br()->inline('[')
+            ->green()->inline('slug')
+            ->inline(']:            # 可选/建议，博文自定义URL，支持字母、数字、下划线、中划线, 至少6位');
+
+        if ($curr) {
+            $this->climate->br()->inline('当前: ')->green()->inline($curr);
+        }
+
+        READ_SLUG:
+        echo "\n";
+        $slug = $this->read();
+        $slug = trim($slug);
+        if (mb_strlen($slug) > 0 && !preg_match('/^[a-zA-Z0-9\-_]{6,}$/i', $slug)) {
+            $this->climate->red('[slug]格式不正确, 请重新输入:');
+            goto READ_SLUG;
+        }
+        if (empty($slug) && empty($curr)) {
+            $this->climate->red('[slug] 必填!!!');
+            goto READ_SLUG;
+        }
+
+        return $slug ?: $curr;
+    }
+
     public function inputMoreTagLineNum($curr)
     {
         $this->climate->br()->inline('[')
@@ -132,6 +132,10 @@ trait Input
         $lineNum = trim($lineNum);
         if (mb_strlen($lineNum) > 0 && !preg_match('/^[0-9]+$/i', $lineNum)) {
             echo '[Summary 行数]格式不正确, 请重新输入:';
+            goto READ_SUMMARY_LINE_NUM;
+        }
+        if (empty($lineNum) && empty($curr)) {
+            $this->climate->red('[Summary 行数] 必填!!!');
             goto READ_SUMMARY_LINE_NUM;
         }
 
