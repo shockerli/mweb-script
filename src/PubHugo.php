@@ -161,7 +161,7 @@ class PubHugo extends Basic
             $this->climate->tab()->red($hugoPostDir);
 
             // 复制附件
-            $mediaPath = dirname(__DIR__) . '/docs/media/' . $docId;
+            $mediaPath = $this->MWebPath . '/docs/media/' . $docId;
             if (is_dir($mediaPath)) {
                 $hugoMediaPath = "$hugoPostDir/media";
                 $this->copyRecursive($mediaPath, $hugoMediaPath);
