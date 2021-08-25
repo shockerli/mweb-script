@@ -12,7 +12,15 @@ class PubHugo extends Basic
 
     public $hugoRootPath;
 
+    public $postPath = 'post';
+
     public $contentDir;
+
+    /**
+     * @var bool 引用文档或附件，是绝对路径or相对路径
+     *           相对路径，在首页中，如果有图片，会出现问题
+     */
+    public $absolute = false;
 
     public function readConfig()
     {
@@ -30,11 +38,15 @@ class PubHugo extends Basic
             exit("\n");
         }
 
-        $this->hugoRootPath = rtrim(trim($config['hugo_root_path']), '/');
-        $this->contentDir   = $this->hugoRootPath . '/content/post'; // 有些主题是post，有些是posts
-        if (!empty($config['post_path'])) {
-            $this->contentDir = $this->hugoRootPath . '/content/' . trim(trim($config['post_path']), '/');
+        if (isset($config['absolute'])) {
+            $this->absolute = (bool)$config['absolute'];
         }
+
+        $this->hugoRootPath = rtrim(trim($config['hugo_root_path']), '/');
+        if (!empty($config['post_path'])) {
+            $this->postPath = trim(trim($config['post_path']), '/');
+        }
+        $this->contentDir = $this->hugoRootPath . '/content/' . $this->postPath; // 有些主题是post，有些是posts
         if (!is_dir($this->contentDir)) {
             mkdir($this->contentDir, 0777, true);
         }
@@ -140,6 +152,19 @@ class PubHugo extends Basic
                 $this->climate->bold()->red('tag_more_line 缺失');
             }
 
+            // absolute
+            // 优先级:
+            // 1. 当前输入
+            // 2. 已发布文档的配置
+            // 3. config.ini中的配置
+            // 4. 代码默认值
+            $this->absolute = $this->inputAbsolute($header['absolute'] ?? $this->absolute);
+            if ($this->absolute) {
+                $header['absolute'] = true;
+            } else {
+                unset($header['absolute']);
+            }
+
             // 组装内容
             ksort($header);
             $headerYaml = Yaml::dump($header);
@@ -184,6 +209,8 @@ class PubHugo extends Basic
      * (最好在版本控制下执行，避免内容丢失)
      * 原: 博文内容与附件分离
      * 新: 每篇博文独立一个文件夹
+     *
+     * @deprecated
      */
     public function migrate()
     {
@@ -198,7 +225,7 @@ class PubHugo extends Basic
 
             // 写入文档
             $doc = file_get_contents($path);
-            $doc = $this->replaceMediaPath($doc);
+            $doc = $this->replaceMediaPath($doc, $header);
             file_put_contents("$hugoPostDir/index.md", $doc);
 
             // 复制附件
@@ -259,7 +286,7 @@ class PubHugo extends Basic
     }
 
     // 获得去掉标题后的内容
-    public function modifyContent($filePath, $header = 0)
+    public function modifyContent($filePath, $header)
     {
         $handle = fopen($filePath, "r");
         if (!$handle) {
@@ -300,33 +327,70 @@ class PubHugo extends Basic
         $content = ltrim($content);
 
         // 替换附件路径
-        $content = $this->replaceMediaPath($content);
+        $content = $this->replaceMediaPath($content, $header);
         // 替换关联文档路径
         return $this->replaceMWebLink($content, $header);
     }
 
     // 替换附件路径
-    public function replaceMediaPath($doc)
+    public function replaceMediaPath($doc, $header)
     {
+        // 绝对路径，是为了兼容Summary
+        // 支持引用其他文档的附件
+
+        // (绝对)
+        // ](media/xx/yy.zz)   =>  ](/post/xx/media/yy.zz)
+        // ](/media/xx/yy.zz)  =>  ](/post/xx/media/yy.zz)
+
+        // (相对)
         // ](media/xx/yy.zz)   =>  ](media/yy.zz)
+        // ](media/xx/yy.zz)   =>  ](../xx/media/yy.zz)
         // ](/media/xx/yy.zz)  =>  ](media/yy.zz)
-        return preg_replace_callback('#(]\()/?(media/)(\d+)/(.*\))#', function ($matches) {
-            return urldecode($matches[1] . $matches[2] . $matches[4]);
+        // ](/media/xx/yy.zz)  =>  ](../xx/media/yy.zz)
+        return preg_replace_callback('#(]\()/?(media/)(\d+)/(.*\))#', function ($matches) use ($header) {
+            $slug = $header['slug'];
+            // 引用其他文档的附件时
+            if ($matches[3] != $header['doc_id']) {
+                $existPath = $this->findHugoPostPath($matches[3]);
+                if (!$existPath) {
+                    $this->climate->red('引用的附件所在文档尚未发布: ' . $matches[0]);
+                    exit;
+                }
+                $slug = basename(dirname($existPath));
+            }
+            $slug = trim($slug, '/');
+
+            // 构建路径
+            if ($this->absolute) { // 绝对路径
+                return urldecode($matches[1] . '/' . $this->postPath . '/' . $slug . '/' . $matches[2] . $matches[4]);
+            } // 其他文档的附件
+            elseif ($matches[3] != $header['doc_id']) {
+                return urldecode($matches[1] . '../' . $slug . '/' . $matches[2] . $matches[4]);
+            } else { // 自身附件
+                return urldecode($matches[1] . $matches[2] . $matches[4]);
+            }
         }, $doc);
     }
 
     // 替换mweblib相关文档链接
     public function replaceMWebLink($doc, $header)
     {
-        // [XXX](mweblib://12345678)  => ../blog-slug/
+        // [XXX](mweblib://12345678)  => ../blog-slug/      (相对)
+        // [XXX](mweblib://12345678)  => /post/blog-slug/   (绝对)
         return preg_replace_callback('#mweblib://(\d+)#', function ($matches) use ($header) {
+            // 绝对or相对
+            $prefix = '/' . $this->postPath;
+            if (!$this->absolute) {
+                $prefix = '..';
+            }
+
             $docId = $matches[1];
             // 引用了自己...
             if ($docId == $header['doc_id']) {
-                return '../' . $header['slug'];
+                return $prefix . '/' . $header['slug'];
             }
 
-            // 查询是否已发布
+            // 引用了其他文档，查询是否已发布
             $existPath = $this->findHugoPostPath($docId);
             if (!$existPath) {
                 $this->climate->red('笔记中引用的文档尚未发布成博客: ' . $matches[0]);
@@ -334,8 +398,9 @@ class PubHugo extends Basic
                 exit;
             }
 
-            // 替换成相对路径的链接
-            return '../' . basename(dirname($existPath));
+            // 替换成绝对路径的链接
+            // 相对路径，在Summary时会有问题
+            return $prefix . '/' . basename(dirname($existPath));
         }, $doc);
     }
 

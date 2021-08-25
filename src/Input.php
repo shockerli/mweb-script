@@ -142,4 +142,25 @@ trait Input
         return intval($lineNum);
     }
 
+    public function inputAbsolute($curr)
+    {
+        $this->climate->br()->inline('[')
+            ->green()->inline('absolute')
+            ->inline(']:        # 可选/建议，在博客中的引用文档/附件是否以绝对路径进行链接，绝对路径(true/1)，相对路径(false/0)');
+
+        $this->climate->br()->inline('当前: ')->green()->inline($curr ? 'true' : 'false');
+
+        echo "\n";
+        $absolute = trim($this->read());
+        if (strlen($absolute) == 0) {
+            return (bool)$curr;
+        }
+
+        if (in_array(strtolower($absolute), ['false', 'off', '0'])) {
+            return false;
+        }
+
+        return (bool)$absolute;
+    }
+
 }

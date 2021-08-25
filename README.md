@@ -32,7 +32,11 @@ git submodule add git@github.com:shockerli/mweb-script.git script
 # Hugo博客根目录
 hugo_root_path = /path/to/your/hugo/blog
 # 列表文章的目录，一般为post或posts，不同主题有所不同
+# 可选，默认为post
 post_path = post
+# 引用的文档/附件是绝对路径or相对路径
+# 可选，默认为false（相对路径）
+absolute = false
 ```
 
 ## 脚本 `commit.sh`
@@ -57,9 +61,11 @@ post_path = post
 > - 自动生成 Hugo 博文配置信息（标题、描述、Slug、Summery 分隔符、分类、标签等）
 >
 > - 自动拷贝笔记中的附件到博客目录，并替换笔记内容中的附件链接地址
-> 
+>
 > - 自动替换 MWeb 内链 `[XXX](mweblib://12345678)  => ../blog-slug/`
-> 
+>
+> - 支持绝对路径、相对路径可选（优先级：当前输入 > 博文配置 > config.ini配置 > 默认false）如果首页图片加载出问题，可输入true解决
+>
 > - 自动忽略 `博文` 标签
 
 在终端中执行 `php script/pub-hugo.php [doc-id]`，进入交互式命令行：
@@ -95,6 +101,11 @@ post_path = post
 [Summary 行数]:    # 可选/建议，Summary 行数
 当前: 17
 > 
+
+[absolute]:        # 可选/建议，在博客中的引用文档/附件是否以绝对路径进行链接，绝对路径(true/1)，相对路径(false/0)
+当前: true
+> 
+
 博文[PHP Homebrew 版本问题 dyld: Library not load]发布成功
 文档路径: 
         /Users/jioby/shockerli.net/content/post/php-homebrew-dyld-library-not-load
