@@ -1,3 +1,3 @@
 hugo_root_path = /Users/jioby/shockerli.net
 post_path = post
-absolute = true
+absolute = false
