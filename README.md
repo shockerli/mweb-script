@@ -37,6 +37,9 @@ post_path = post
 # 引用的文档/附件是绝对路径or相对路径
 # 可选，默认为false（相对路径）
 absolute = false
+# 忽略的标签，不会同步到Hugo
+# 可选，半角逗号分隔多个，默认：博文,博客,Blog,BLOG,blog
+ignore_tag = 博文,博客,Blog,BLOG,blog
 ```
 
 ## 脚本 `commit.sh`
@@ -66,7 +69,7 @@ absolute = false
 >
 > - 支持绝对路径、相对路径可选（优先级：当前输入 > 博文配置 > config.ini配置 > 默认false）如果首页图片加载出问题，可输入true解决
 >
-> - 自动忽略 `博文` 标签
+> - 自动忽略 `博文`、`博客`、`Blog`、`BLOG`、`blog` 标签，也可在配置中设置
 
 在终端中执行 `php script/pub-hugo.php [doc-id]`，进入交互式命令行：
 

@@ -8,12 +8,26 @@ class PubHugo extends Basic
 
     use Input;
 
-    public $config = [];
+    /**
+     * @var array 解析后的 config.ini 配置数据
+     */
+    public $config = [
+        'ignore_tag' => '博文|博客|Blog|BLOG|blog',
+    ];
 
+    /**
+     * @var string Hugo 博客根目录
+     */
     public $hugoRootPath;
 
+    /**
+     * @var string 普通博客文章存放目录名，根据不同主题而异，post/posts
+     */
     public $postPath = 'post';
 
+    /**
+     * @var string 存放博客文章的绝对实际目录
+     */
     public $contentDir;
 
     /**
@@ -27,7 +41,7 @@ class PubHugo extends Basic
         parent::readConfig();
 
         $config       = @parse_ini_file($this->configPath);
-        $this->config = $config;
+        $this->config = array_merge($this->config, $config);
         if (empty($config['hugo_root_path'])) {
             $this->climate->red("配置项: hugo_root_path 缺失");
             exit("\n");
@@ -52,6 +66,9 @@ class PubHugo extends Basic
         }
     }
 
+    /**
+     * 开始运行命令行
+     */
     public function start()
     {
         $this->router->add('<doc_id:uint>', function (array $args) {
@@ -101,7 +118,8 @@ class PubHugo extends Basic
             }
 
             // 标签/关键词(强行覆盖)
-            $tagList = array_values(array_filter(array_diff($this->getTag($docId), ['博文'])));
+            $ignoreTags = array_filter(explode(',', $this->config['ignore_tag']));
+            $tagList    = array_values(array_filter(array_diff($this->getTag($docId), $ignoreTags)));
             if ($tagList) {
                 $header['tags'] = $header['keywords'] = $tagList;
             } else {
@@ -242,6 +260,8 @@ class PubHugo extends Basic
     }
 
     /**
+     * 根据doc_id查找对应博文的MD文件路径
+     *
      * @param  int $docId
      * @return string|null
      */
@@ -285,7 +305,13 @@ class PubHugo extends Basic
         return $yaml;
     }
 
-    // 获得去掉标题后的内容
+    /**
+     * 对笔记内容进行解析转换
+     *
+     * @param  string $filePath MWeb的笔记文件路径
+     * @param  array  $header   文档头信息
+     * @return string
+     */
     public function modifyContent($filePath, $header)
     {
         $handle = fopen($filePath, "r");
@@ -332,7 +358,13 @@ class PubHugo extends Basic
         return $this->replaceMWebLink($content, $header);
     }
 
-    // 替换附件路径
+    /**
+     * 替换附件路径
+     *
+     * @param  string $doc    文档笔记内容
+     * @param  array  $header 文档头信息
+     * @return string
+     */
     public function replaceMediaPath($doc, $header)
     {
         // 绝对路径，是为了兼容Summary
@@ -372,7 +404,13 @@ class PubHugo extends Basic
         }, $doc);
     }
 
-    // 替换mweblib相关文档链接
+    /**
+     * 替换mweblib相关文档链接
+     *
+     * @param  string $doc    文档笔记内容
+     * @param  array  $header 文档头信息
+     * @return string
+     */
     public function replaceMWebLink($doc, $header)
     {
         // [XXX](mweblib://12345678)  => ../blog-slug/      (相对)
