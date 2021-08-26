@@ -12,7 +12,7 @@ class PubHugo extends Basic
      * @var array 解析后的 config.ini 配置数据
      */
     public $config = [
-        'ignore_tag' => '博文|博客|Blog|BLOG|blog',
+        'ignore_tag' => '博文,博客,Blog,BLOG,blog',
     ];
 
     /**
