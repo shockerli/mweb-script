@@ -146,21 +146,31 @@ trait Input
     {
         $this->climate->br()->inline('[')
             ->green()->inline('absolute')
-            ->inline(']:        # 可选/建议，在博客中的引用文档/附件是否以绝对路径进行链接，绝对路径(true/1)，相对路径(false/0)');
+            ->inline(']:        # 可选/建议，在博客中的引用文档/附件是否以绝对路径进行链接')
+            ->br()->inline('                   # 出现图片/附件无法显示时，可设置为true尝试解决')
+            ->br()->inline('                   # 绝对路径(true/1)，相对路径(false/0)');
 
         $this->climate->br()->inline('当前: ')->green()->inline($curr ? 'true' : 'false');
 
+        READ_ABSOLUTE:
         echo "\n";
         $absolute = trim($this->read());
         if (strlen($absolute) == 0) {
             return (bool)$curr;
         }
 
+        // false
         if (in_array(strtolower($absolute), ['false', 'off', '0'])) {
             return false;
         }
 
-        return (bool)$absolute;
+        // true
+        if (in_array(strtolower($absolute), ['true', 'on', '1'])) {
+            return true;
+        }
+
+        $this->climate->red('输入值不符合要求');
+        goto READ_ABSOLUTE;
     }
 
 }
