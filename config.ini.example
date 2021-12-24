@@ -2,3 +2,7 @@ hugo_root_path = /Users/jioby/shockerli.net
 post_path = post
 absolute = false
 ignore_tag = 博文,博客,Blog,BLOG,blog
+
+[pub-github]
+# 文档ID = Git仓库地址
+15120187670755 = /Users/jioby/code/shockerli/go-awesome

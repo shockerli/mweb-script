@@ -150,3 +150,16 @@ title: 'PHP Homebrew 版本问题 dyld: Library not load'
 
 「其他内容省略...」
 ```
+
+
+## 脚本 `pub-github.php`
+
+在终端中执行 `php script/pub-github.php [doc-id]` 发布内容到 Git 仓库。
+
+使用前，需在配置文件 `config.ini` 添加 Git 仓库地址映射：
+
+```ini
+[pub-github]
+# 文档ID = Git仓库地址
+15120187670755 = /Users/jioby/code/shockerli/go-awesome
+```
