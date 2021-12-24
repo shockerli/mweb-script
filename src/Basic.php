@@ -39,7 +39,9 @@ class Basic
         $this->readConfig();
     }
 
-    // 检查sqlite3数据库地址是否OK，并连接
+    /**
+     * 检查sqlite3数据库地址是否OK，并连接
+     */
     public function connectDB()
     {
         if (!file_exists($this->dbPath)) {
@@ -54,7 +56,9 @@ class Basic
         ]);
     }
 
-    // 读取配置
+    /**
+     * 读取&解析配置(建议重写)
+     */
     public function readConfig()
     {
         if (!file_exists($this->configPath)) {
@@ -63,13 +67,42 @@ class Basic
         }
     }
 
-    // 从MD文件获取文档标题
-    public function parseTitle($id)
+    /**
+     * 获取文档路径
+     *
+     * @param  int $docId 文档ID
+     * @return string
+     */
+    public function getMWebDocPath($docId)
     {
-        $text  = file_get_contents($this->MWebPath . '/docs/' . $id . '.md');
-        $text  = str_replace(["\r\n", "\r"], "\n", $text);
-        $text  = trim($text, "\n");
-        $lines = explode("\n", $text);
+        return $this->MWebPath . '/docs/' . $docId . '.md';
+    }
+
+    /**
+     * 读取Doc文档内容
+     *
+     * @param  int $docId 文档ID
+     * @return string
+     */
+    public function getMWebDocContent($docId)
+    {
+        if (!file_exists($this->getMWebDocPath($docId))) {
+            return '';
+        }
+        return file_get_contents($this->getMWebDocPath($docId));
+    }
+
+    /**
+     * 从MD文件获取文档标题
+     *
+     * @param  string $content Markdown 内容
+     * @return string
+     */
+    public function parseTitle($content)
+    {
+        $content = str_replace(["\r\n", "\r"], "\n", $content);
+        $content = trim($content, "\n");
+        $lines   = explode("\n", $content);
         foreach ($lines as $line) {
             if (empty($line)) {
                 continue;
@@ -85,11 +118,46 @@ class Basic
         return '';
     }
 
-    // 复制目录
-    public function copyRecursive($sourceDir, $destDir)
+    /**
+     * 替换MD标题
+     *
+     * @param  string $content  文档内容
+     * @param  string $newTitle 新标题
+     * @return string
+     */
+    public function replaceTitle($content, $newTitle)
     {
-        $sourceDir = rtrim($sourceDir, '/');
-        if (!is_dir($sourceDir)) {
+        return preg_replace_callback("/^(#\s)(.*)(\n)/", function ($matches) use ($newTitle) {
+            return $matches[1] . $newTitle . $matches[3];
+        }, $content);
+    }
+
+    /**
+     * 是否为空目录
+     *
+     * @param  string $dir
+     * @return bool
+     */
+    public function isEmptyDir($dir)
+    {
+        return empty(glob(rtrim($dir, '/') . '/*'));
+    }
+
+    /**
+     * 复制目录
+     *
+     * @param  string $srcDir  源目录
+     * @param  string $destDir 目标目录
+     */
+    public function copyRecursive($srcDir, $destDir)
+    {
+        $srcDir = rtrim($srcDir, '/');
+        if (!is_dir($srcDir)) {
+            return;
+        }
+
+        $files = glob($srcDir . '/*');
+        if (empty($files)) {
             return;
         }
 
@@ -98,7 +166,7 @@ class Basic
             mkdir($destDir, 0777, true);
         }
 
-        foreach (glob($sourceDir . '/*') as $file) {
+        foreach ($files as $file) {
             $dst = $destDir . '/' . basename($file);
             if (is_file($file)) {
                 copy($file, $dst);
@@ -112,7 +180,12 @@ class Basic
         }
     }
 
-    // 获取文档分类
+    /**
+     * 获取文档分类
+     *
+     * @param  int $docId 文档ID
+     * @return array
+     */
     public function getCategory($docId)
     {
         $catList = $this->db->select('cat_article', [
@@ -130,7 +203,12 @@ class Basic
         return $cats;
     }
 
-    // 获取文档TAG
+    /**
+     * 获取文档TAG
+     *
+     * @param  int $docId 文档ID
+     * @return array
+     */
     public function getTag($docId)
     {
         // MWeb 3.x tag 表中没有uuid，关联表中的rid为tag.id
@@ -153,7 +231,11 @@ class Basic
         return $tags;
     }
 
-    // 删除路径
+    /**
+     * 删除路径
+     *
+     * @param  string $path 文件或目录的路径
+     */
     public function delPath($path)
     {
         // 不存在直接返回(可能是没权限)
@@ -174,6 +256,21 @@ class Basic
                 : unlink("$path/$file"); // 文件则删除
         }
         rmdir($path); // 目录下文件及子目录删除完后，再删除本目录
+    }
+
+    /**
+     * 格式化存储大小
+     *
+     * @param  int $bytes    存储大小(B)
+     * @param  int $decimals 保留小数
+     * @return string
+     */
+    public function humanStorageSize($bytes, $decimals = 2)
+    {
+        $sz     = 'BKMGTP';
+        $factor = (int)floor((strlen($bytes) - 1) / 3);
+
+        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
     }
 
 }

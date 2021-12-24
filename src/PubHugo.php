@@ -83,7 +83,7 @@ class PubHugo extends Basic
                 exit("\n");
             }
 
-            $docFilePath = $this->MWebPath . '/docs/' . $docId . '.md';
+            $docFilePath = $this->getMWebDocPath($docId);
             if (!file_exists($docFilePath)) {
                 $this->climate->red("文档文件: $docFilePath 不存在");
                 exit("\n");
@@ -197,7 +197,7 @@ class PubHugo extends Basic
             $hugoPostDir = "$this->contentDir/{$header['slug']}";
             mkdir($hugoPostDir, 0777, true);
 
-            // 写入文档
+            // 写入文档(约定统一以index.md为文章内容文件，一篇文章一个目录)
             file_put_contents("$hugoPostDir/index.md", $doc);
             $this->climate->bold()->green("博文[{$header['title']}]发布成功");
             $this->climate->bold()->green("文档路径: ");
@@ -205,17 +205,18 @@ class PubHugo extends Basic
 
             // 复制附件
             $mediaPath = $this->MWebPath . '/docs/media/' . $docId;
-            if (is_dir($mediaPath)) {
+            if (is_dir($mediaPath) && !$this->isEmptyDir($mediaPath)) {
                 $hugoMediaPath = "$hugoPostDir/media";
                 $this->copyRecursive($mediaPath, $hugoMediaPath);
-                $this->climate->bold()->green("附件路径: ");
-                $this->climate->tab()->red($hugoMediaPath);
+                $this->climate->white("附件路径: ");
+                $this->climate->tab()->green($hugoMediaPath);
             }
         });
 
+        // 命令使用说明
         $this->router->add('[--help | -h]', function () {
             echo 'Usage help:' . PHP_EOL;
-            echo '    php ' . basename(__FILE__) . ' <doc_id>' . PHP_EOL;
+            echo '    php ' . $_SERVER['argv'][0] . ' <doc_id>' . PHP_EOL;
         });
 
         $this->router->execArgv();

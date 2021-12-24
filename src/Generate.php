@@ -10,8 +10,9 @@ class Generate extends Basic
             'state' => 1,
         ]);
         foreach ($articles as $row) {
-            $row['name']               = $this->parseTitle($row['uuid']);
-            $articleList[$row['uuid']] = $row;
+            $docId               = $row['uuid'];
+            $row['name']         = $this->parseTitle($this->getMWebDocContent($docId));
+            $articleList[$docId] = $row;
         }
 
         $catRef       = [];
@@ -73,6 +74,7 @@ class Generate extends Basic
     {
         $docDir = $this->MWebPath . '/docs';
 
+        // 使用du命令
         if (function_exists('popen') && !strstr(PHP_OS, 'WIN')) {
             $handle = popen('du -sh ' . $docDir . ' 2>&1', 'r');
             $read   = stream_get_contents($handle);
@@ -82,20 +84,13 @@ class Generate extends Basic
             return array_shift($read);
         }
 
+        // 逐个文件读取(未含附件)
         $totalSize = 0;
         foreach (glob($docDir . '/*.md') as $file) {
             is_file($file) && $totalSize += filesize($file);
         }
 
-        return $this->humanFileSize($totalSize);
-    }
-
-    public function humanFileSize($bytes, $decimals = 2)
-    {
-        $sz     = 'BKMGTP';
-        $factor = (int)floor((strlen($bytes) - 1) / 3);
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz{$factor};
+        return $this->humanStorageSize($totalSize);
     }
 
 }
