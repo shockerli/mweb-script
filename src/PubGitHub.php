@@ -41,7 +41,7 @@ class PubGitHub extends Basic
             }
 
             // 读取文档
-            $content = file_get_contents($docFilePath);
+            $content = $this->getMWebDocContent($docId);
 
             $title = $this->parseTitle($content);
             $this->climate->white()->inline('文章标题: ')->green()->inline($title)->br();

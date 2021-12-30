@@ -104,7 +104,7 @@ class PubHugo extends Basic
 
             // 标题
             if (empty($header['title'])) {
-                $header['title'] = $this->parseTitle($docId);
+                $header['title'] = $this->parseTitle($this->getMWebDocContent($docId));
             }
             $title = $this->inputTitle($header['title']);
             if ($title) {
