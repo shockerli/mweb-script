@@ -397,7 +397,7 @@ class PubHugo extends Basic
             if ($this->absolute) { // 绝对路径
                 return urldecode($matches[1] . '/' . $this->postPath . '/' . $slug . '/' . $matches[2] . $matches[4]);
             } // 其他文档的附件
-            elseif ($matches[3] != $header['doc_id']) {
+            else if ($matches[3] != $header['doc_id']) {
                 return urldecode($matches[1] . '../' . $slug . '/' . $matches[2] . $matches[4]);
             } else { // 自身附件
                 return urldecode($matches[1] . $matches[2] . $matches[4]);

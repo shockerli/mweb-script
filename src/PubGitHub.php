@@ -20,6 +20,7 @@ class PubGitHub extends Basic
         }
     }
 
+    // Mac 开光指南 [2022.07.30更新]
     public function start()
     {
         $this->router->add('<doc_id:uint>', function (array $args) {
@@ -59,9 +60,14 @@ class PubGitHub extends Basic
 
             $gitReadmePath = $gitPath . '/README.md';
             if (file_exists($gitReadmePath)) {
+                // 替换标题
                 $usedTitle = $this->parseTitle(file_get_contents($gitReadmePath));
                 $content   = $this->replaceTitle($content, $usedTitle);
             }
+
+            // 替换附件路径
+            $assets  = 'assets';
+            $content = $this->replaceMediaPath($content, $assets);
 
             // 写入文档
             file_put_contents($gitReadmePath, $content);
@@ -69,7 +75,10 @@ class PubGitHub extends Basic
             // 复制附件
             $mediaPath = $this->MWebPath . '/docs/media/' . $docId;
             if (is_dir($mediaPath) && !$this->isEmptyDir($mediaPath)) {
-                $gitAssetsPath = "$gitPath/assets";
+                $gitAssetsPath = "$gitPath/$assets";
+                // 先删除
+                $this->delPath($gitAssetsPath);
+                // 再拷贝
                 $this->copyRecursive($mediaPath, $gitAssetsPath);
                 $this->climate->white("附件路径: ");
                 $this->climate->tab()->green($gitAssetsPath);
@@ -82,6 +91,22 @@ class PubGitHub extends Basic
         });
 
         $this->router->execArgv();
+    }
+
+    /**
+     * 替换附件路径
+     *
+     * @param  string $content 文档笔记内容
+     * @param  string $assets  附件路径
+     * @return string
+     */
+    public function replaceMediaPath($content, $assets)
+    {
+        // ](media/xx/yy.zz)   =>  ]($assets/yy.zz)
+        // ](/media/xx/yy.zz)  =>  ]($assets/yy.zz)
+        return preg_replace_callback('#(]\()/?(media/)(\d+)/(.*\))#', function ($matches) use ($assets) {
+            return urldecode("$matches[1]$assets/$matches[4]");
+        }, $content);
     }
 
 }

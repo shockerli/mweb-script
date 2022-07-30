@@ -7,8 +7,9 @@
 环境要求:
 
 - Git
-- PHP>=7.1
-- macOS（因为MWeb仅支持Mac）
+- PHP >= 7.1
+- Composer
+- macOS（MWeb 仅支持 Mac）
 
 在 MWeb 文档存放目录下，执行：
 
@@ -21,6 +22,13 @@ git submodule add git@github.com:shockerli/mweb-script.git script
 如果没有用 Git 对 MWeb 文档进行管理，那么直接下载本项目的代码，放到 `script` 目录即可。
 
 > `script` 非必须，可以是其他名字，此处是为了方便后续文档统一书写。
+
+对于主项目全新克隆时，需初始化并更新子项目，这就会自动克隆子项目：
+```shell
+git submodule init && git submodule update
+```
+
+然后到 `script` 目录下执行 `composer install --no-dev -vv`。
 
 ## 配置
 
