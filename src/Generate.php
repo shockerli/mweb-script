@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * README 内容生成
+ */
 class Generate extends Basic
 {
 

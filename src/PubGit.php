@@ -1,6 +1,9 @@
 <?php
 
-class PubGitHub extends Basic
+/**
+ * 发布笔记内容到 GitHub 仓库
+ */
+class PubGit extends Basic
 {
 
     /**
@@ -20,7 +23,6 @@ class PubGitHub extends Basic
         }
     }
 
-    // Mac 开光指南 [2022.07.30更新]
     public function start()
     {
         $this->router->add('<doc_id:uint>', function (array $args) {

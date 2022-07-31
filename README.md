@@ -160,9 +160,10 @@ title: 'PHP Homebrew 版本问题 dyld: Library not load'
 ```
 
 
-## 脚本 `pub-github.php`
+## 脚本 `pub-git.php`
+拷贝、替换笔记内容和附件到某个 Git 仓库，适用于一篇笔记作为一个仓库的管理。
 
-在终端中执行 `php script/pub-github.php [doc-id]` 发布内容到 Git 仓库。
+在终端中执行 `php script/pub-git.php [doc-id]` 发布内容到 Git 仓库。
 
 使用前，需在配置文件 `config.ini` 添加 Git 仓库地址映射：
 
