@@ -170,7 +170,7 @@ class Basic
             $dst = $destDir . '/' . basename($file);
             if (is_file($file)) {
                 copy($file, $dst);
-            } elseif (is_dir($file)) {
+            } else if (is_dir($file)) {
                 if (!is_dir($dst)) {
                     mkdir($dst, 0777, true);
                 }
@@ -271,6 +271,64 @@ class Basic
         $factor = (int)floor((strlen($bytes) - 1) / 3);
 
         return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
+    }
+
+    /**
+     * 模板变量替换
+     * 支持的变量根据 $params 的 KEY 而定, 用法: ${var_name} 替换为 $params['var_name'] 的值
+     *
+     * @param  array|string $subject
+     * @param  array        $params
+     * @return string|array
+     */
+    public function replaceVars($subject, array $params)
+    {
+        $encoded = false;
+        if (!is_string($subject)) {
+            $encoded = true;
+            $subject = json_encode($subject, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        $subject = preg_replace_callback(
+            [
+                '/"(\${([a-zA-Z]\w*?)})"/i',
+                '/(\${([a-zA-Z]\w*?)})/i',
+            ],
+            function ($matches) use ($params) {
+                if (!isset($params[$matches[2]])) {
+                    return $matches[0];
+                }
+
+                $replace = $params[$matches[2]];
+                if (!is_scalar($replace)) {
+                    $replace = json_encode($replace, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                } else if ($matches[0][0] == '"') {
+                    $replace = '"' . $replace . '"';
+                }
+                return $replace;
+            },
+            $subject
+        );
+
+        if ($encoded) {
+            $subject = json_decode($subject, true);
+            if (json_last_error()) {
+                $subject = [];
+            }
+        }
+
+        return $subject;
+    }
+
+    public function vars()
+    {
+        return [
+            'date'     => date('Y-m-d'),
+            'dateDot'  => date('Y.m.d'),
+            'dateZh'   => date('Y年月d日'),
+            'time'     => date('H:i:s'),
+            'datetime' => date('Y-m-d H:i:s'),
+        ];
     }
 
 }

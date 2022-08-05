@@ -71,6 +71,9 @@ class PubGit extends Basic
             $assets  = 'assets';
             $content = $this->replaceMediaPath($content, $assets);
 
+            // 替换变量内容
+            $content = $this->replaceVars($content, $this->vars());
+
             // 写入文档
             file_put_contents($gitReadmePath, $content);
 

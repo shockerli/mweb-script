@@ -353,6 +353,9 @@ class PubHugo extends Basic
 
         $content = ltrim($content);
 
+        // 替换变量内容
+        $content = $this->replaceVars($content, $this->vars());
+
         // 替换附件路径
         $content = $this->replaceMediaPath($content, $header);
         // 替换关联文档路径
