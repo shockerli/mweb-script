@@ -183,6 +183,11 @@ class PubHugo extends Basic
                 unset($header['absolute']);
             }
 
+            // 自动标题中的更新日期为
+            $header['title'] = preg_replace_callback('#\d{4}[.|-]\d{1,2}[.|-]\d{1,2}#', function () use ($header) {
+                return date('Y.m.d', strtotime($header['lastmod']));
+            }, $header['title']);
+
             // 组装内容
             ksort($header);
             $headerYaml = Yaml::dump($header);
@@ -199,16 +204,17 @@ class PubHugo extends Basic
 
             // 写入文档(约定统一以index.md为文章内容文件，一篇文章一个目录)
             file_put_contents("$hugoPostDir/index.md", $doc);
-            $this->climate->bold()->green("博文[{$header['title']}]发布成功");
-            $this->climate->bold()->green("文档路径: ");
-            $this->climate->tab()->red($hugoPostDir);
+            $this->climate->br()->white('发布成功:');
+            $this->climate->tab()->red($header['title']);
+            $this->climate->white("文档路径:");
+            $this->climate->tab()->green($hugoPostDir);
 
             // 复制附件
             $mediaPath = $this->MWebPath . '/docs/media/' . $docId;
             if (is_dir($mediaPath) && !$this->isEmptyDir($mediaPath)) {
                 $hugoMediaPath = "$hugoPostDir/media";
                 $this->copyRecursive($mediaPath, $hugoMediaPath);
-                $this->climate->white("附件路径: ");
+                $this->climate->white("附件路径:");
                 $this->climate->tab()->green($hugoMediaPath);
             }
         });
