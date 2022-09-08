@@ -217,6 +217,9 @@ class PubHugo extends Basic
                 $this->climate->white("附件路径:");
                 $this->climate->tab()->green($hugoMediaPath);
             }
+
+            // 自动添加标签: Blog
+            $this->addTag2Blog($docId, 'Blog');
         });
 
         // 命令使用说明

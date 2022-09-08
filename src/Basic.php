@@ -232,6 +232,39 @@ class Basic
     }
 
     /**
+     * 给文章添加标签
+     * （标签已存在）
+     *
+     * @param  int    $docId
+     * @param  string $tagName
+     * @return bool
+     */
+    public function addTag2Blog($docId, $tagName)
+    {
+        $tagName = trim($tagName);
+
+        // 已存在关联
+        $tagList = $this->getTag($docId);
+        if (in_array(strtolower($tagName), array_map(function ($v) {
+            return strtolower($v);
+        }, $tagList))) {
+            return true;
+        }
+
+        // 标签是否存在
+        $tag = $this->db->get('tag', '*', ['name' => $tagName]);
+        if (!$tag) {
+            return false;
+        }
+        $tagUuid = $tag['uuid'];
+        $this->db->insert('tag_article', [
+            'rid' => $tagUuid,
+            'aid' => $docId,
+        ]);
+        return true;
+    }
+
+    /**
      * 删除路径
      *
      * @param  string $path 文件或目录的路径
