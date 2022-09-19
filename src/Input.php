@@ -139,12 +139,8 @@ trait Input
         echo "\n";
         $lineNum = $this->read();
         $lineNum = trim($lineNum);
-        if (mb_strlen($lineNum) > 0 && !preg_match('/^[0-9]+$/i', $lineNum)) {
+        if (mb_strlen($lineNum) > 0 && !preg_match('/^\d+$/i', $lineNum)) {
             echo '[Summary 行数]格式不正确, 请重新输入:';
-            goto READ_SUMMARY_LINE_NUM;
-        }
-        if (empty($lineNum) && empty($curr)) {
-            $this->climate->red('[Summary 行数] 必填!!!');
             goto READ_SUMMARY_LINE_NUM;
         }
 

@@ -8,6 +8,8 @@ class PubHugo extends Basic
 
     use Input;
 
+    const TAG_READ_MORE = '<!--more-->';
+
     /**
      * @var array 解析后的 config.ini 配置数据
      */
@@ -162,13 +164,7 @@ class PubHugo extends Basic
             }
 
             // 标签: <!--more-->
-            $moreLineNum = $this->inputMoreTagLineNum($header['tag_more_line'] ?? 0);
-            if ($moreLineNum) {
-                $header['tag_more_line'] = $moreLineNum;
-            }
-            if (empty($header['tag_more_line'])) {
-                $this->climate->bold()->red('tag_more_line 缺失');
-            }
+            $header['tag_more_line'] = $this->inputMoreTagLineNum($header['tag_more_line'] ?? 0);
 
             // absolute
             // 优先级:
@@ -189,9 +185,10 @@ class PubHugo extends Basic
             }, $header['title']);
 
             // 组装内容
+            $content = $this->modifyContent($docFilePath, $header);
+
             ksort($header);
             $headerYaml = Yaml::dump($header);
-            $content    = $this->modifyContent($docFilePath, $header);
             $doc        = "---\n# 博文配置信息\n\n" . $headerYaml . "---\n\n\n" . $content;
 
             // 先删除原Hugo文章目录
@@ -318,20 +315,21 @@ class PubHugo extends Basic
     /**
      * 对笔记内容进行解析转换
      *
-     * @param  string $filePath MWeb的笔记文件路径
-     * @param  array  $header   文档头信息
+     * @param  string  $filePath MWeb的笔记文件路径
+     * @param  array  &$header   文档头信息
      * @return string
      */
-    public function modifyContent($filePath, $header)
+    public function modifyContent($filePath, &$header)
     {
         $handle = fopen($filePath, "r");
         if (!$handle) {
             return '';
         }
 
-        $content = "";
-        $find    = false;
-        $num     = 0;
+        $content    = "";
+        $find       = false;
+        $hasTagMore = 0;
+        $num        = 0;
         while (($line = fgets($handle, 4096)) !== false) {
             $num += 1;
 
@@ -349,11 +347,24 @@ class PubHugo extends Basic
                 $line = '```flowchart' . PHP_EOL;
             }
 
+            // Hugo 不认带有空格的标签，比如 <!-- more --> 就不行，MWeb 自带的就是这种，不行，需要替换
+            if (preg_match('/^\s*<!--\s*more\s*-->\s*$/i', $line)) {
+                $hasTagMore++;
+                $header['tag_more_line'] = $num; // 修改行号为已有
+                // 第一个标签，替换为HUGO标准
+                if ($hasTagMore == 1) {
+                    $line = PHP_EOL . self::TAG_READ_MORE . PHP_EOL;
+                } else {
+                    // 其余的跳过忽略
+                    continue;
+                }
+            }
+
             // 切记: 不能去空
             $content .= $line;
 
-            // 添加<!--more-->标签
-            if ($num == $header['tag_more_line']) {
+            // 如果没有、且符合行号，则添加<!--more-->标签
+            if (!empty($header['tag_more_line']) && $num == $header['tag_more_line'] && $hasTagMore == 0) {
                 $content .= PHP_EOL . "<!--more-->" . PHP_EOL . PHP_EOL;
             }
         }
